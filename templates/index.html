@@ -1,55 +1,201 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Text Preprocessor</title>
+    <title>Text Processor</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Text Preprocessor</h1>
-        <form action="/process" method="post" enctype="multipart/form-data">
-            <div>
-                <label>Upload Text File:</label><br>
-                <input type="file" name="file" accept=".txt" required>
-            </div>
-            <div class="options">
-                <label>Select Preprocessing Options:</label><br>
+        <h1>Text Processor</h1>
+        <div class="upload-section">
+            <label>Upload Text File:</label><br>
+            <input type="file" name="file" accept=".txt" id="fileInput">
+        </div>
+
+        <div class="options-container">
+            <div class="options preprocessing">
+                <h3>Preprocessing Options</h3>
                 <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="lowercase">
+                    <input type="checkbox" name="preprocessing" value="lowercase" id="lowercase" class="process-option">
                     <span>Convert to lowercase</span>
                     <div class="preprocessing-description">
                         Converts all text to lowercase for consistency
                     </div>
                 </div>
                 <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="punctuation">
+                    <input type="checkbox" name="preprocessing" value="punctuation" id="punctuation" class="process-option">
                     <span>Remove punctuation</span>
                     <div class="preprocessing-description">
                         Removes all punctuation marks from the text
                     </div>
                 </div>
                 <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="lemmatize">
+                    <input type="checkbox" name="preprocessing" value="lemmatize" id="lemmatize" class="process-option">
                     <span>Lemmatization</span>
                     <div class="preprocessing-description">
-                        Reduces words to their base form (e.g., running → run, better → good)
+                        Reduces words to their base form (e.g., running → run)
                     </div>
                 </div>
             </div>
-            <div>
-                <button class="btn" type="submit">Process Text</button>
+
+            <div class="options augmentation">
+                <h3>Augmentation Options</h3>
+                <div class="augmentation-option">
+                    <input type="radio" name="augmentation" value="word_swap" id="word_swap" class="process-option">
+                    <span>Word Swap</span>
+                    <div class="augmentation-description">
+                        Randomly swaps adjacent words
+                    </div>
+                </div>
+                <div class="augmentation-option">
+                    <input type="radio" name="augmentation" value="synonym" id="synonym" class="process-option">
+                    <span>Similar Word Replacement</span>
+                    <div class="augmentation-description">
+                        Replaces words with semantically similar ones
+                    </div>
+                </div>
+                <div class="augmentation-option">
+                    <input type="radio" name="augmentation" value="none" id="none" class="process-option" checked>
+                    <span>No Augmentation</span>
+                    <div class="augmentation-description">
+                        Apply preprocessing only
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
+
         <div class="text-boxes">
             <div class="text-box">
                 <h3>Original Text</h3>
-                <textarea readonly>{{ original_text }}</textarea>
+                <textarea readonly id="originalText">{{ original_text }}</textarea>
             </div>
             <div class="text-box">
                 <h3>Processed Text</h3>
-                <textarea readonly>{{ processed_text }}</textarea>
+                <textarea readonly id="processedText">{{ processed_text }}</textarea>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const originalText = document.getElementById('originalText');
+            const processedText = document.getElementById('processedText');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const allOptions = document.querySelectorAll('.process-option');
+
+            function showLoading() {
+                loadingOverlay.style.display = 'flex';
+                processedText.classList.add('disabled');
+                allOptions.forEach(option => option.disabled = true);
+            }
+
+            function hideLoading() {
+                loadingOverlay.style.display = 'none';
+                processedText.classList.remove('disabled');
+                allOptions.forEach(option => option.disabled = false);
+            }
+
+            async function processText() {
+                if (!originalText.value.trim()) {
+                    processedText.value = 'Please upload a file first!';
+                    return;
+                }
+
+                const formData = new FormData();
+
+                const preprocessingOptions = Array.from(
+                    document.querySelectorAll('input[name="preprocessing"]:checked')
+                ).map(cb => cb.value);
+
+                const selectedAugmentation = document.querySelector('input[name="augmentation"]:checked');
+
+                if (preprocessingOptions.length === 0 && (!selectedAugmentation || selectedAugmentation.value === 'none')) {
+                    processedText.value = originalText.value;
+                    return;
+                }
+
+                showLoading();
+
+                preprocessingOptions.forEach(option => {
+                    formData.append('preprocessing', option);
+                });
+
+                if (selectedAugmentation && selectedAugmentation.value !== 'none') {
+                    formData.append('augmentation', selectedAugmentation.value);
+                }
+
+                try {
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const htmlText = await response.text();
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = htmlText;
+                        const newProcessedText = tempDiv.querySelector('#processedText').value;
+                        processedText.value = newProcessedText;
+                    } else {
+                        processedText.value = 'Error processing text';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    processedText.value = 'Error processing text';
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            fileInput.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    showLoading();
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    document.querySelectorAll('input[name="preprocessing"]:checked').forEach(cb => {
+                        formData.append('preprocessing', cb.value);
+                    });
+
+                    const selectedAugmentation = document.querySelector('input[name="augmentation"]:checked');
+                    if (selectedAugmentation && selectedAugmentation.value !== 'none') {
+                        formData.append('augmentation', selectedAugmentation.value);
+                    }
+
+                    try {
+                        const response = await fetch('/process', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const htmlText = await response.text();
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = htmlText;
+                            originalText.value = tempDiv.querySelector('#originalText').value;
+                            if (preprocessingOptions.length === 0 && (!selectedAugmentation || selectedAugmentation.value === 'none')) {
+                                processedText.value = tempDiv.querySelector('#originalText').value;
+                            } else {
+                                processedText.value = tempDiv.querySelector('#processedText').value;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    } finally {
+                        hideLoading();
+                    }
+                }
+            });
+
+            document.querySelectorAll('.process-option').forEach(option => {
+                option.addEventListener('change', processText);
+            });
+        });
+    </script>
 </body>
 </html>
