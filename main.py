@@ -4,19 +4,18 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Optional
 import uvicorn
-from preprocessing import TextPreprocessor
-from augmentation import TextAugmenter
-from image_preprocessing import ImagePreprocessor
-from image_augmentation import ImageAugmenter
-from audio_preprocessing import AudioPreprocessor
-from audio_augmentation import AudioAugmenter
-from model_preprocessing import ModelPreprocessor
-from model_augmentation import ModelAugmenter
+
+from audio.audio_augmentation import AudioAugmenter
+from audio.audio_preprocessing import AudioPreprocessor
+from image.image_augmentation import ImageAugmenter
+from image.image_preprocessing import ImagePreprocessor
+from text.text_augmentation import TextAugmenter
+from text.text_preprocessing import TextPreprocessor
+from model.model_augmentation import ModelAugmenter
+from model.model_preprocessing import ModelPreprocessor
 from starlette.middleware.sessions import SessionMiddleware
 import PIL.Image as Image
 from io import BytesIO
-import torchaudio
-import torch
 
 app = FastAPI()
 
