@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Preprocessor</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Text Preprocessor</h1>
+        <form action="/process" method="post" enctype="multipart/form-data">
+            <div>
+                <label>Upload Text File:</label><br>
+                <input type="file" name="file" accept=".txt" required>
+            </div>
+            <div class="options">
+                <label>Select Preprocessing Options:</label><br>
+                <div class="preprocessing-option">
+                    <input type="checkbox" name="preprocessing" value="lowercase">
+                    <span>Convert to lowercase</span>
+                    <div class="preprocessing-description">
+                        Converts all text to lowercase for consistency
+                    </div>
+                </div>
+                <div class="preprocessing-option">
+                    <input type="checkbox" name="preprocessing" value="punctuation">
+                    <span>Remove punctuation</span>
+                    <div class="preprocessing-description">
+                        Removes all punctuation marks from the text
+                    </div>
+                </div>
+                <div class="preprocessing-option">
+                    <input type="checkbox" name="preprocessing" value="lemmatize">
+                    <span>Lemmatization</span>
+                    <div class="preprocessing-description">
+                        Reduces words to their base form (e.g., running → run, better → good)
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="btn" type="submit">Process Text</button>
+            </div>
+        </form>
+        <div class="text-boxes">
+            <div class="text-box">
+                <h3>Original Text</h3>
+                <textarea readonly>{{ original_text }}</textarea>
+            </div>
+            <div class="text-box">
+                <h3>Processed Text</h3>
+                <textarea readonly>{{ processed_text }}</textarea>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
