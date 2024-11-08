@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Text & Image Processor</title>
+    <title>MultiModal Preprocessor</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
 <body>
     <div class="container">
+        <h1>MultiModal Preprocessor</h1>
+        <p class="subtitle">Preprocess and augment text, images, audio, and 3D models</p>
+
         <!-- Text Processing Section -->
         <div class="section text-section">
             <h2>Text Processing</h2>
@@ -16,7 +19,7 @@
 
             <div class="options-container">
                 <div class="options preprocessing">
-                    <h3>Preprocessing Options (Multiple):</h3>
+                    <h3>Preprocessing Options</h3>
                     <div class="preprocessing-option">
                         <input type="checkbox" name="text_preprocessing" value="lowercase" class="text-process-option">
                         <span>Convert to lowercase</span>
@@ -41,7 +44,7 @@
                 </div>
 
                 <div class="options augmentation">
-                    <h3>Augmentation Options (Single):</h3>
+                    <h3>Augmentation Options</h3>
                     <div class="augmentation-option">
                         <input type="radio" name="text_augmentation" value="word_swap" class="text-process-option">
                         <span>Word Swap</span>
@@ -91,7 +94,7 @@
 
             <div class="options-container">
                 <div class="options preprocessing">
-                    <h3>Preprocessing Options (Multiple):</h3>
+                    <h3>Preprocessing Options</h3>
                     <div class="preprocessing-option">
                         <input type="checkbox" name="image_preprocessing" value="normalize" class="image-process-option">
                         <span>Normalize</span>
@@ -116,7 +119,7 @@
                 </div>
 
                 <div class="options augmentation">
-                    <h3>Augmentation Options (Single):</h3>
+                    <h3>Augmentation Options </h3>
                     <div class="augmentation-option">
                         <input type="radio" name="image_augmentation" value="flip" class="image-process-option">
                         <span>Horizontal Flip</span>
@@ -181,7 +184,7 @@
 
             <div class="options-container">
                 <div class="options preprocessing">
-                    <h3>Preprocessing Options (Multiple):</h3>
+                    <h3>Preprocessing Options </h3>
                     <div class="preprocessing-option">
                         <input type="checkbox" name="audio_preprocessing" value="noise" class="audio-process-option">
                         <span>Add Background Noise</span>
@@ -206,7 +209,7 @@
                 </div>
 
                 <div class="options augmentation">
-                    <h3>Augmentation Options (Single):</h3>
+                    <h3>Augmentation Options </h3>
                     <div class="augmentation-option">
                         <input type="radio" name="audio_augmentation" value="timeshift" class="audio-process-option">
                         <span>Time Shift</span>
@@ -255,11 +258,103 @@
                 </div>
             </div>
         </div>
+
+                <!-- 3D Model Processing Section -->
+        <div class="section model-section">
+            <h2>3D Model Processing</h2>
+            <div class="upload-section">
+                <label>Upload 3D Model (.obj):</label><br>
+                <input type="file" name="model_file" accept=".obj" id="modelFileInput">
+            </div>
+
+            <div class="options-container">
+                <div class="options preprocessing">
+                    <h3>Preprocessing Options </h3>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="model_preprocessing" value="normalize" class="model-process-option">
+                        <span>Normalize</span>
+                        <div class="option-description">
+                            Normalize model to unit cube
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="model_preprocessing" value="center" class="model-process-option">
+                        <span>Center Mesh </span>
+                        <div class="option-description">
+                            Center the model at origin
+                        </div>
+                    </div>
+                </div>
+
+                <div class="options augmentation">
+                    <h3>Augmentation Options </h3>
+                    <div class="augmentation-option">
+                        <input type="radio" name="model_augmentation" value="rotate" class="model-process-option">
+                        <span>Rotate Model</span>
+                        <div class="option-description">
+                            Rotate around Y axis
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="model_augmentation" value="scale" class="model-process-option">
+                        <span>Random Scale</span>
+                        <div class="option-description">
+                            Apply random non-uniform scaling
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="model_augmentation" value="none" class="model-process-option" checked>
+                        <span>No Augmentation</span>
+                        <div class="option-description">
+                            Apply preprocessing only
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>Original Model</h3>
+                    <div class="model-preview" id="originalModel">
+                        <div class="upload-message">Upload a model to see preview</div>
+                    </div>
+                </div>
+                <div class="preview-box">
+                    <h3>Processed Model</h3>
+                    <div class="model-preview" id="processedModel">
+                        <div class="upload-message">Upload a model to see preview</div>
+                    </div>
+                    <div class="loading-overlay" id="modelLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-<script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="{{ url_for('static', path='/js/model_viewer.js') }}"></script>
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function setupProcessing(fileInput, processUrl, loadingOverlay, preprocessingSelector, augmentationSelector, originalPreview, processedPreview) {
+            let originalViewer = null;
+            let processedViewer = null
+
+            function setupProcessing(fileInput, processUrl, loadingOverlay, preprocessingSelector, augmentationSelector, containerId1, containerId2) {
+                const originalContainer = document.getElementById(containerId1);
+                const processedContainer = document.getElementById(containerId2);
+
+                function initViewers() {
+                    // Clear containers
+                    originalContainer.innerHTML = '';
+                    processedContainer.innerHTML = '';
+
+                    // Initialize viewers
+                    originalViewer = new ModelViewer(containerId1);
+                    processedViewer = new ModelViewer(containerId2);
+                }
+
                 async function processFile(formData) {
                     loadingOverlay.style.display = 'flex';
                     try {
@@ -277,35 +372,51 @@
                                 return;
                             }
 
-                            if (processUrl.includes('audio')) {
-                                // Handle audio processing response
+                            if (processUrl.includes('text')) {
+                                // Handle text processing
+                                if (data.original_text) {
+                                    document.getElementById('originalText').value = data.original_text;
+                                }
+                                if (data.processed_text) {
+                                    document.getElementById('processedText').value = data.processed_text;
+                                }
+                            }
+                            else if (processUrl.includes('image')) {
+                                // Handle image processing
+                                if (data.original_image) {
+                                    document.getElementById('originalImage').innerHTML =
+                                        `<img src="data:image/jpeg;base64,${data.original_image}" alt="Original Image">`;
+                                }
+                                if (data.processed_image) {
+                                    document.getElementById('processedImage').innerHTML =
+                                        `<img src="data:image/jpeg;base64,${data.processed_image}" alt="Processed Image">`;
+                                }
+                            }
+                            else if (processUrl.includes('audio')) {
+                                // Handle audio processing
                                 if (data.original_audio) {
-                                    const originalAudio = originalPreview.querySelector('audio');
+                                    const originalAudio = document.querySelector('#originalAudio audio');
                                     const originalSource = originalAudio.querySelector('source');
                                     originalSource.src = `data:audio/wav;base64,${data.original_audio}`;
-                                    originalAudio.load();  // Important: reload the audio element
-                                    console.log('Original audio updated');  // Debug log
+                                    originalAudio.load();
                                 }
                                 if (data.processed_audio) {
-                                    const processedAudio = processedPreview.querySelector('audio');
+                                    const processedAudio = document.querySelector('#processedAudio audio');
                                     const processedSource = processedAudio.querySelector('source');
                                     processedSource.src = `data:audio/wav;base64,${data.processed_audio}`;
-                                    processedAudio.load();  // Important: reload the audio element
-                                    console.log('Processed audio updated');  // Debug log
+                                    processedAudio.load();
                                 }
-                            } else {
-                                 if (processUrl.includes('text')) {
-                                    // Handle text processing response
-                                    originalPreview.value = data.original_text || '';
-                                    processedPreview.value = data.processed_text || '';
-                                } else {
-                                    // Handle image processing response
-                                    if (data.original_image) {
-                                        originalPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.original_image}" alt="Original Image">`;
+                            }
+                            else if (processUrl.includes('model')) {
+                                // Handle 3D model processing
+                                if (data.original_model && data.processed_model) {
+                                    // Initialize viewers if first time
+                                    if (!originalViewer || !processedViewer) {
+                                        initViewers();
                                     }
-                                    if (data.processed_image) {
-                                        processedPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.processed_image}" alt="Processed Image">`;
-                                    }
+                                    // Load models
+                                    originalViewer.loadModel(data.original_model);
+                                    processedViewer.loadModel(data.processed_model);
                                 }
                             }
                         }
@@ -393,6 +504,17 @@
                 'input[name="audio_augmentation"]',
                 document.getElementById('originalAudio'),
                 document.getElementById('processedAudio')
+            );
+
+            // Setup model processing
+            setupProcessing(
+                document.getElementById('modelFileInput'),
+                '/process_model',
+                document.getElementById('modelLoadingOverlay'),
+                'input[name="model_preprocessing"]',
+                'input[name="model_augmentation"]',
+                'originalModel',
+                'processedModel'
             );
         });
     </script>

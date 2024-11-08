@@ -7,14 +7,14 @@ class AudioAugmenter:
     def __init__(self):
         self.sample_rate = 16000
 
-    def time_shift(self, waveform, shift_factor=0.2):
+    def time_shift(self, waveform, shift_factor=-0.4):
         """Shift audio in time"""
         length = waveform.shape[1]
         shift_amount = int(length * shift_factor)
         shifted = torch.roll(waveform, shifts=shift_amount, dims=1)
         return shifted
 
-    def pitch_shift(self, waveform, pitch_factor=2):
+    def pitch_shift(self, waveform, pitch_factor=4):
         """Shift the pitch of the audio"""
         effects = [
             ["pitch", str(pitch_factor * 100)],  # multiply by 100 as pitch is in cents

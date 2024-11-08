@@ -13,15 +13,15 @@ class ImageAugmenter:
     @staticmethod
     def rotate(image):
         """Rotate image randomly between -30 and 30 degrees"""
-        transform = transforms.RandomRotation(30)
+        transform = transforms.RandomRotation(60)
         return transform(image)
 
     @staticmethod
     def color_jitter(image):
         """Randomly change brightness, contrast, and saturation"""
         transform = transforms.ColorJitter(
-            brightness=0.2,
+            brightness=0.5,
             contrast=0.2,
-            saturation=0.2
+            saturation=0.8
         )
         return transform(image)

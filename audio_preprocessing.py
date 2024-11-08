@@ -43,7 +43,7 @@ class AudioPreprocessor:
         noise = torch.randn_like(waveform) * noise_level
         return waveform + noise
 
-    def change_speed(self, waveform, speed_factor=1.2):
+    def change_speed(self, waveform, speed_factor=1.6):
         """Change the speed of the audio"""
         try:
             effects = [

@@ -13,3 +13,5 @@ aiofiles==0.7.0
 Pillow==9.5.0
 numpy==1.21.0
 soundfile==0.12.1
+trimesh==3.9.35
+scipy>=1.7.0

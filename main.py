@@ -10,6 +10,8 @@ from image_preprocessing import ImagePreprocessor
 from image_augmentation import ImageAugmenter
 from audio_preprocessing import AudioPreprocessor
 from audio_augmentation import AudioAugmenter
+from model_preprocessing import ModelPreprocessor
+from model_augmentation import ModelAugmenter
 from starlette.middleware.sessions import SessionMiddleware
 import PIL.Image as Image
 from io import BytesIO
@@ -232,6 +234,88 @@ async def process_audio(
         return JSONResponse({
             "error": f"Failed to process audio: {str(e)}"
         })
+
+
+@app.post("/process_model")
+async def process_model(
+        request: Request,
+        preprocessing: List[str] = Form(default=[]),
+        augmentation: Optional[str] = Form(default=None),
+        file: Optional[UploadFile] = File(default=None)
+):
+    try:
+        if not file:
+            return JSONResponse({
+                "error": "Please upload a model file!"
+            })
+
+        if not file.filename.lower().endswith('.obj'):
+            return JSONResponse({
+                "error": "Only .obj files are supported!"
+            })
+
+        content = await file.read()
+        processor = ModelPreprocessor()
+
+        try:
+            mesh = processor.load_obj(content)
+            print(f"Loaded mesh with {len(mesh.vertices)} vertices and {len(mesh.faces)} faces")
+        except Exception as e:
+            print(f"Failed to load mesh: {str(e)}")
+            return JSONResponse({
+                "error": f"Failed to load mesh: {str(e)}"
+            })
+
+        # Make a copy for processing
+        processed_mesh = mesh.copy()
+
+        # Apply preprocessing
+        for step in preprocessing:
+            try:
+                if step == "normalize":
+                    processed_mesh = processor.normalize(processed_mesh)
+                    print(f"Applied normalization")
+                elif step == "center":
+                    processed_mesh = processor.center_model(processed_mesh)
+                    print(f"Applied smoothing")
+            except Exception as e:
+                print(f"Warning: Failed to apply {step}: {str(e)}")
+
+        # Apply augmentation
+        if augmentation and augmentation != "none":
+            try:
+                augmenter = ModelAugmenter()
+                if augmentation == "rotate":
+                    processed_mesh = augmenter.rotate(processed_mesh)
+                    print("Applied rotation")
+                elif augmentation == "scale":
+                    processed_mesh = augmenter.scale_random(processed_mesh)
+                    print("Applied scaling")
+            except Exception as e:
+                print(f"Warning: Failed to apply augmentation: {str(e)}")
+
+        # Convert to JSON format for three.js
+        try:
+            original_model = processor.to_json(mesh)
+            processed_model = processor.to_json(processed_mesh)
+            print("Successfully converted models to JSON")
+        except Exception as e:
+            print(f"Failed to convert model for display: {str(e)}")
+            return JSONResponse({
+                "error": f"Failed to convert model for display: {str(e)}"
+            })
+
+        return JSONResponse({
+            "original_model": original_model,
+            "processed_model": processed_model
+        })
+
+    except Exception as e:
+        print(f"Error processing model: {str(e)}")
+        return JSONResponse({
+            "error": f"Failed to process model: {str(e)}"
+        })
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
