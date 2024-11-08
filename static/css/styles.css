@@ -129,3 +129,29 @@ input[type="radio"] {
     opacity: 0.6;
     pointer-events: none;
 }
+
+.audio-preview {
+    width: 100%;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.audio-preview audio {
+    width: 100%;
+    max-width: 300px;
+}
+
+/* Update section margins for better spacing */
+.text-section,
+.image-section {
+    margin-bottom: 40px;
+}
+
+.audio-section {
+    margin-bottom: 20px;
+}

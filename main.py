@@ -8,9 +8,13 @@ from preprocessing import TextPreprocessor
 from augmentation import TextAugmenter
 from image_preprocessing import ImagePreprocessor
 from image_augmentation import ImageAugmenter
+from audio_preprocessing import AudioPreprocessor
+from audio_augmentation import AudioAugmenter
 from starlette.middleware.sessions import SessionMiddleware
 import PIL.Image as Image
 from io import BytesIO
+import torchaudio
+import torch
 
 app = FastAPI()
 
@@ -39,7 +43,9 @@ async def read_root(request: Request):
             "original_text": "",
             "processed_text": "",
             "original_image": "",
-            "processed_image": ""
+            "processed_image": "",
+            "original_audio": "",
+            "processed_audio": ""
         }
     )
 
@@ -152,6 +158,80 @@ async def process_image(
             "error": str(e)
         })
 
+
+@app.post("/process_audio")
+async def process_audio(
+        request: Request,
+        preprocessing: List[str] = Form(default=[]),
+        augmentation: Optional[str] = Form(default=None),
+        file: Optional[UploadFile] = File(default=None)
+):
+    try:
+        if not file:
+            return JSONResponse({
+                "error": "Please upload an audio file first!"
+            })
+
+        # Check file extension
+        if not file.filename.lower().endswith(('.mp3', '.wav')):
+            return JSONResponse({
+                "error": "Only .mp3 and .wav files are supported!"
+            })
+
+        content = await file.read()
+        processor = AudioPreprocessor()
+
+        try:
+            waveform, sample_rate = processor.load_audio(content)
+        except Exception as e:
+            return JSONResponse({
+                "error": f"Failed to load audio file: {str(e)}"
+            })
+
+        processed_waveform = waveform.clone()
+
+        # Apply preprocessing
+        for step in preprocessing:
+            try:
+                if step == "noise":
+                    processed_waveform = processor.add_noise(processed_waveform)
+                elif step == "lowpass":
+                    processed_waveform = processor.apply_low_pass_filter(processed_waveform)
+                elif step == "speed":
+                    processed_waveform = processor.change_speed(processed_waveform)
+            except Exception as e:
+                print(f"Warning: Failed to apply {step}: {str(e)}")
+
+        # Apply augmentation
+        if augmentation and augmentation != "none":
+            try:
+                augmenter = AudioAugmenter()
+                if augmentation == "timeshift":
+                    processed_waveform = augmenter.time_shift(processed_waveform)
+                elif augmentation == "pitch":
+                    processed_waveform = augmenter.pitch_shift(processed_waveform)
+            except Exception as e:
+                print(f"Warning: Failed to apply augmentation: {str(e)}")
+
+        # Convert to base64 for web playback
+        try:
+            original_audio_b64 = processor.to_base64(waveform, sample_rate)
+            processed_audio_b64 = processor.to_base64(processed_waveform, sample_rate)
+        except Exception as e:
+            return JSONResponse({
+                "error": f"Failed to convert audio for playback: {str(e)}"
+            })
+
+        return JSONResponse({
+            "original_audio": original_audio_b64,
+            "processed_audio": processed_audio_b64
+        })
+
+    except Exception as e:
+        print(f"Error processing audio: {str(e)}")
+        return JSONResponse({
+            "error": f"Failed to process audio: {str(e)}"
+        })
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

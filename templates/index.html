@@ -170,6 +170,91 @@
                 </div>
             </div>
         </div>
+
+        <!-- Audio Processing Section -->
+        <div class="section audio-section">
+            <h2>Audio Processing</h2>
+            <div class="upload-section">
+                <label>Upload Audio File (.wav, .mp3):</label><br>
+                <input type="file" name="audio_file" accept=".wav,.mp3" id="audioFileInput">
+            </div>
+
+            <div class="options-container">
+                <div class="options preprocessing">
+                    <h3>Preprocessing Options (Multiple):</h3>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="audio_preprocessing" value="noise" class="audio-process-option">
+                        <span>Add Background Noise</span>
+                        <div class="option-description">
+                            Adds controlled background noise to the audio
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="audio_preprocessing" value="lowpass" class="audio-process-option">
+                        <span>Low-pass Filter</span>
+                        <div class="option-description">
+                            Applies a low-pass filter to reduce high frequencies
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="audio_preprocessing" value="speed" class="audio-process-option">
+                        <span>Speed Change</span>
+                        <div class="option-description">
+                            Changes the playback speed of the audio
+                        </div>
+                    </div>
+                </div>
+
+                <div class="options augmentation">
+                    <h3>Augmentation Options (Single):</h3>
+                    <div class="augmentation-option">
+                        <input type="radio" name="audio_augmentation" value="timeshift" class="audio-process-option">
+                        <span>Time Shift</span>
+                        <div class="option-description">
+                            Shifts the audio in time
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="audio_augmentation" value="pitch" class="audio-process-option">
+                        <span>Pitch Shift</span>
+                        <div class="option-description">
+                            Changes the pitch of the audio
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="audio_augmentation" value="none" class="audio-process-option" checked>
+                        <span>No Augmentation</span>
+                        <div class="option-description">
+                            Apply preprocessing only
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>Original Audio</h3>
+                    <div class="audio-preview" id="originalAudio">
+                        <audio controls>
+                            <source type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                </div>
+                <div class="preview-box">
+                    <h3>Processed Audio</h3>
+                    <div class="audio-preview" id="processedAudio">
+                        <audio controls>
+                            <source type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    <div class="loading-overlay" id="audioLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -185,23 +270,42 @@
 
                         if (response.ok) {
                             const data = await response.json();
+                            console.log('Response data:', data);  // Debug log
 
                             if (data.error) {
                                 console.error('Error:', data.error);
                                 return;
                             }
 
-                            if (processUrl.includes('text')) {
-                                // Handle text processing response
-                                originalPreview.value = data.original_text || '';
-                                processedPreview.value = data.processed_text || '';
-                            } else {
-                                // Handle image processing response
-                                if (data.original_image) {
-                                    originalPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.original_image}" alt="Original Image">`;
+                            if (processUrl.includes('audio')) {
+                                // Handle audio processing response
+                                if (data.original_audio) {
+                                    const originalAudio = originalPreview.querySelector('audio');
+                                    const originalSource = originalAudio.querySelector('source');
+                                    originalSource.src = `data:audio/wav;base64,${data.original_audio}`;
+                                    originalAudio.load();  // Important: reload the audio element
+                                    console.log('Original audio updated');  // Debug log
                                 }
-                                if (data.processed_image) {
-                                    processedPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.processed_image}" alt="Processed Image">`;
+                                if (data.processed_audio) {
+                                    const processedAudio = processedPreview.querySelector('audio');
+                                    const processedSource = processedAudio.querySelector('source');
+                                    processedSource.src = `data:audio/wav;base64,${data.processed_audio}`;
+                                    processedAudio.load();  // Important: reload the audio element
+                                    console.log('Processed audio updated');  // Debug log
+                                }
+                            } else {
+                                 if (processUrl.includes('text')) {
+                                    // Handle text processing response
+                                    originalPreview.value = data.original_text || '';
+                                    processedPreview.value = data.processed_text || '';
+                                } else {
+                                    // Handle image processing response
+                                    if (data.original_image) {
+                                        originalPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.original_image}" alt="Original Image">`;
+                                    }
+                                    if (data.processed_image) {
+                                        processedPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.processed_image}" alt="Processed Image">`;
+                                    }
                                 }
                             }
                         }
@@ -214,6 +318,7 @@
 
                 fileInput.addEventListener('change', function(e) {
                     if (this.files.length > 0) {
+                        console.log('File selected:', this.files[0].name);  // Debug log
                         const formData = new FormData();
                         formData.append('file', this.files[0]);
 
@@ -235,8 +340,9 @@
                 // Handle option changes
                 document.querySelectorAll(preprocessingSelector + ',' + augmentationSelector).forEach(option => {
                     option.addEventListener('change', function() {
-                        if (!fileInput.files.length) return; // Don't process if no file is uploaded
+                        if (!fileInput.files.length) return;
 
+                        console.log('Option changed:', this.value);  // Debug log
                         const formData = new FormData();
                         formData.append('file', fileInput.files[0]);
 
@@ -276,6 +382,17 @@
                 'input[name="image_augmentation"]',
                 document.getElementById('originalImage'),
                 document.getElementById('processedImage')
+            );
+
+            // Setup audio processing
+            setupProcessing(
+                document.getElementById('audioFileInput'),
+                '/process_audio',
+                document.getElementById('audioLoadingOverlay'),
+                'input[name="audio_preprocessing"]',
+                'input[name="audio_augmentation"]',
+                document.getElementById('originalAudio'),
+                document.getElementById('processedAudio')
             );
         });
     </script>
