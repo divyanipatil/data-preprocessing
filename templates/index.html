@@ -1,200 +1,282 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Text Processor</title>
+    <title>Text & Image Processor</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Text Processor</h1>
-        <div class="upload-section">
-            <label>Upload Text File:</label><br>
-            <input type="file" name="file" accept=".txt" id="fileInput">
+        <!-- Text Processing Section -->
+        <div class="section text-section">
+            <h2>Text Processing</h2>
+            <div class="upload-section">
+                <label>Upload Text File:</label><br>
+                <input type="file" name="text_file" accept=".txt" id="textFileInput">
+            </div>
+
+            <div class="options-container">
+                <div class="options preprocessing">
+                    <h3>Preprocessing Options (Multiple):</h3>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="text_preprocessing" value="lowercase" class="text-process-option">
+                        <span>Convert to lowercase</span>
+                        <div class="option-description">
+                            Converts all text to lowercase for consistency
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="text_preprocessing" value="punctuation" class="text-process-option">
+                        <span>Remove punctuation</span>
+                        <div class="option-description">
+                            Removes all punctuation marks from the text
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="text_preprocessing" value="lemmatize" class="text-process-option">
+                        <span>Lemmatization</span>
+                        <div class="option-description">
+                            Reduces words to their base form (e.g., running → run)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="options augmentation">
+                    <h3>Augmentation Options (Single):</h3>
+                    <div class="augmentation-option">
+                        <input type="radio" name="text_augmentation" value="word_swap" class="text-process-option">
+                        <span>Word Swap</span>
+                        <div class="option-description">
+                            Randomly swaps adjacent words
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="text_augmentation" value="synonym" class="text-process-option">
+                        <span>Similar Word Replacement</span>
+                        <div class="option-description">
+                            Replaces words with semantically similar ones
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="text_augmentation" value="none" class="text-process-option" checked>
+                        <span>No Augmentation</span>
+                        <div class="option-description">
+                            Apply preprocessing only
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>Original Text</h3>
+                    <textarea readonly id="originalText">{{ original_text }}</textarea>
+                </div>
+                <div class="preview-box">
+                    <h3>Processed Text</h3>
+                    <textarea readonly id="processedText">{{ processed_text }}</textarea>
+                    <div class="loading-overlay" id="textLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="options-container">
-            <div class="options preprocessing">
-                <h3>Preprocessing Options</h3>
-                <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="lowercase" id="lowercase" class="process-option">
-                    <span>Convert to lowercase</span>
-                    <div class="preprocessing-description">
-                        Converts all text to lowercase for consistency
+        <!-- Image Processing Section -->
+        <div class="section image-section">
+            <h2>Image Processing</h2>
+            <div class="upload-section">
+                <label>Upload Image File:</label><br>
+                <input type="file" name="image_file" accept=".jpg,.jpeg,.png" id="imageFileInput">
+            </div>
+
+            <div class="options-container">
+                <div class="options preprocessing">
+                    <h3>Preprocessing Options (Multiple):</h3>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="image_preprocessing" value="normalize" class="image-process-option">
+                        <span>Normalize</span>
+                        <div class="option-description">
+                            Standardize pixel values using ImageNet statistics
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="image_preprocessing" value="resize" class="image-process-option">
+                        <span>Resize (224x224)</span>
+                        <div class="option-description">
+                            Resize image to standard dimensions
+                        </div>
+                    </div>
+                    <div class="preprocessing-option">
+                        <input type="checkbox" name="image_preprocessing" value="grayscale" class="image-process-option">
+                        <span>Grayscale</span>
+                        <div class="option-description">
+                            Convert image to grayscale
+                        </div>
                     </div>
                 </div>
-                <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="punctuation" id="punctuation" class="process-option">
-                    <span>Remove punctuation</span>
-                    <div class="preprocessing-description">
-                        Removes all punctuation marks from the text
+
+                <div class="options augmentation">
+                    <h3>Augmentation Options (Single):</h3>
+                    <div class="augmentation-option">
+                        <input type="radio" name="image_augmentation" value="flip" class="image-process-option">
+                        <span>Horizontal Flip</span>
+                        <div class="option-description">
+                            Flip image horizontally
+                        </div>
                     </div>
-                </div>
-                <div class="preprocessing-option">
-                    <input type="checkbox" name="preprocessing" value="lemmatize" id="lemmatize" class="process-option">
-                    <span>Lemmatization</span>
-                    <div class="preprocessing-description">
-                        Reduces words to their base form (e.g., running → run)
+                    <div class="augmentation-option">
+                        <input type="radio" name="image_augmentation" value="rotate" class="image-process-option">
+                        <span>Random Rotation</span>
+                        <div class="option-description">
+                            Rotate image randomly (±30 degrees)
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="image_augmentation" value="color" class="image-process-option">
+                        <span>Color Jitter</span>
+                        <div class="option-description">
+                            Adjust brightness, contrast, and saturation
+                        </div>
+                    </div>
+                    <div class="augmentation-option">
+                        <input type="radio" name="image_augmentation" value="none" class="image-process-option" checked>
+                        <span>No Augmentation</span>
+                        <div class="option-description">
+                            Apply preprocessing only
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="options augmentation">
-                <h3>Augmentation Options</h3>
-                <div class="augmentation-option">
-                    <input type="radio" name="augmentation" value="word_swap" id="word_swap" class="process-option">
-                    <span>Word Swap</span>
-                    <div class="augmentation-description">
-                        Randomly swaps adjacent words
+            <div class="preview-container">
+                <div class="preview-box">
+                    <h3>Original Image</h3>
+                    <div class="image-preview" id="originalImage">
+                        {% if original_image %}
+                        <img src="data:image/png;base64,{{ original_image }}" alt="Original Image">
+                        {% endif %}
                     </div>
                 </div>
-                <div class="augmentation-option">
-                    <input type="radio" name="augmentation" value="synonym" id="synonym" class="process-option">
-                    <span>Similar Word Replacement</span>
-                    <div class="augmentation-description">
-                        Replaces words with semantically similar ones
+                <div class="preview-box">
+                    <h3>Processed Image</h3>
+                    <div class="image-preview" id="processedImage">
+                        {% if processed_image %}
+                        <img src="data:image/png;base64,{{ processed_image }}" alt="Processed Image">
+                        {% endif %}
                     </div>
-                </div>
-                <div class="augmentation-option">
-                    <input type="radio" name="augmentation" value="none" id="none" class="process-option" checked>
-                    <span>No Augmentation</span>
-                    <div class="augmentation-description">
-                        Apply preprocessing only
+                    <div class="loading-overlay" id="imageLoadingOverlay">
+                        <div class="loading-spinner"></div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-boxes">
-            <div class="text-box">
-                <h3>Original Text</h3>
-                <textarea readonly id="originalText">{{ original_text }}</textarea>
-            </div>
-            <div class="text-box">
-                <h3>Processed Text</h3>
-                <textarea readonly id="processedText">{{ processed_text }}</textarea>
-                <div class="loading-overlay" id="loadingOverlay">
-                    <div class="loading-spinner"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('fileInput');
-            const originalText = document.getElementById('originalText');
-            const processedText = document.getElementById('processedText');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const allOptions = document.querySelectorAll('.process-option');
-
-            function showLoading() {
-                loadingOverlay.style.display = 'flex';
-                processedText.classList.add('disabled');
-                allOptions.forEach(option => option.disabled = true);
-            }
-
-            function hideLoading() {
-                loadingOverlay.style.display = 'none';
-                processedText.classList.remove('disabled');
-                allOptions.forEach(option => option.disabled = false);
-            }
-
-            async function processText() {
-                if (!originalText.value.trim()) {
-                    processedText.value = 'Please upload a file first!';
-                    return;
-                }
-
-                const formData = new FormData();
-
-                const preprocessingOptions = Array.from(
-                    document.querySelectorAll('input[name="preprocessing"]:checked')
-                ).map(cb => cb.value);
-
-                const selectedAugmentation = document.querySelector('input[name="augmentation"]:checked');
-
-                if (preprocessingOptions.length === 0 && (!selectedAugmentation || selectedAugmentation.value === 'none')) {
-                    processedText.value = originalText.value;
-                    return;
-                }
-
-                showLoading();
-
-                preprocessingOptions.forEach(option => {
-                    formData.append('preprocessing', option);
-                });
-
-                if (selectedAugmentation && selectedAugmentation.value !== 'none') {
-                    formData.append('augmentation', selectedAugmentation.value);
-                }
-
-                try {
-                    const response = await fetch('/process', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (response.ok) {
-                        const htmlText = await response.text();
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = htmlText;
-                        const newProcessedText = tempDiv.querySelector('#processedText').value;
-                        processedText.value = newProcessedText;
-                    } else {
-                        processedText.value = 'Error processing text';
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    processedText.value = 'Error processing text';
-                } finally {
-                    hideLoading();
-                }
-            }
-
-            fileInput.addEventListener('change', async function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    showLoading();
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    document.querySelectorAll('input[name="preprocessing"]:checked').forEach(cb => {
-                        formData.append('preprocessing', cb.value);
-                    });
-
-                    const selectedAugmentation = document.querySelector('input[name="augmentation"]:checked');
-                    if (selectedAugmentation && selectedAugmentation.value !== 'none') {
-                        formData.append('augmentation', selectedAugmentation.value);
-                    }
-
+            function setupProcessing(fileInput, processUrl, loadingOverlay, preprocessingSelector, augmentationSelector, originalPreview, processedPreview) {
+                async function processFile(formData) {
+                    loadingOverlay.style.display = 'flex';
                     try {
-                        const response = await fetch('/process', {
+                        const response = await fetch(processUrl, {
                             method: 'POST',
                             body: formData
                         });
 
                         if (response.ok) {
-                            const htmlText = await response.text();
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = htmlText;
-                            originalText.value = tempDiv.querySelector('#originalText').value;
-                            if (preprocessingOptions.length === 0 && (!selectedAugmentation || selectedAugmentation.value === 'none')) {
-                                processedText.value = tempDiv.querySelector('#originalText').value;
+                            const data = await response.json();
+
+                            if (data.error) {
+                                console.error('Error:', data.error);
+                                return;
+                            }
+
+                            if (processUrl.includes('text')) {
+                                // Handle text processing response
+                                originalPreview.value = data.original_text || '';
+                                processedPreview.value = data.processed_text || '';
                             } else {
-                                processedText.value = tempDiv.querySelector('#processedText').value;
+                                // Handle image processing response
+                                if (data.original_image) {
+                                    originalPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.original_image}" alt="Original Image">`;
+                                }
+                                if (data.processed_image) {
+                                    processedPreview.innerHTML = `<img src="data:image/jpeg;base64,${data.processed_image}" alt="Processed Image">`;
+                                }
                             }
                         }
                     } catch (error) {
                         console.error('Error:', error);
                     } finally {
-                        hideLoading();
+                        loadingOverlay.style.display = 'none';
                     }
                 }
-            });
 
-            document.querySelectorAll('.process-option').forEach(option => {
-                option.addEventListener('change', processText);
-            });
+                fileInput.addEventListener('change', function(e) {
+                    if (this.files.length > 0) {
+                        const formData = new FormData();
+                        formData.append('file', this.files[0]);
+
+                        // Add preprocessing options
+                        document.querySelectorAll(preprocessingSelector + ':checked').forEach(option => {
+                            formData.append('preprocessing', option.value);
+                        });
+
+                        // Add augmentation option
+                        const augmentation = document.querySelector(augmentationSelector + ':checked');
+                        if (augmentation && augmentation.value !== 'none') {
+                            formData.append('augmentation', augmentation.value);
+                        }
+
+                        processFile(formData);
+                    }
+                });
+
+                // Handle option changes
+                document.querySelectorAll(preprocessingSelector + ',' + augmentationSelector).forEach(option => {
+                    option.addEventListener('change', function() {
+                        if (!fileInput.files.length) return; // Don't process if no file is uploaded
+
+                        const formData = new FormData();
+                        formData.append('file', fileInput.files[0]);
+
+                        // Add preprocessing options
+                        document.querySelectorAll(preprocessingSelector + ':checked').forEach(opt => {
+                            formData.append('preprocessing', opt.value);
+                        });
+
+                        // Add augmentation option
+                        const augmentation = document.querySelector(augmentationSelector + ':checked');
+                        if (augmentation && augmentation.value !== 'none') {
+                            formData.append('augmentation', augmentation.value);
+                        }
+
+                        processFile(formData);
+                    });
+                });
+            }
+
+            // Setup text processing
+            setupProcessing(
+                document.getElementById('textFileInput'),
+                '/process_text',
+                document.getElementById('textLoadingOverlay'),
+                'input[name="text_preprocessing"]',
+                'input[name="text_augmentation"]',
+                document.getElementById('originalText'),
+                document.getElementById('processedText')
+            );
+
+            // Setup image processing
+            setupProcessing(
+                document.getElementById('imageFileInput'),
+                '/process_image',
+                document.getElementById('imageLoadingOverlay'),
+                'input[name="image_preprocessing"]',
+                'input[name="image_augmentation"]',
+                document.getElementById('originalImage'),
+                document.getElementById('processedImage')
+            );
         });
     </script>
 </body>
